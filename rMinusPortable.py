@@ -3,6 +3,7 @@ import sys, getopt
 sys.path.append('.')
 import pypot.dynamixel
 import time
+import math
 import RTIMU
 import os.path
 import numpy as np
@@ -129,7 +130,7 @@ class Motion(object):
             writ = dict(zip(ids, f))
             dxl.setPos(writ)
             time.sleep(0.008 / speed)
-            print writ
+            #print writ
 
 
 
@@ -208,7 +209,7 @@ imu.setCompassEnable(True)
 
 poll_interval = imu.IMUGetPollInterval()
 print("Recommended Poll Interval: %dmS\n" % poll_interval)
-return imu
+
 
 
 def imu_read(imu):
@@ -217,10 +218,9 @@ def imu_read(imu):
     # print("%f %f %f" % (x,y,z))
     data = imu.getIMUData()
     fusionPose = data["fusionPose"]
-    print("r: %f p: %f y: %f" % (math.degrees(fusionPose[0]), 
-        math.degrees(fusionPose[1]), math.degrees(fusionPose[2])))
+   # print("r: %f p: %f y: %f" % (math.degrees(fusionPose[0]), math.degrees(fusionPose[1]), math.degrees(fusionPose[2])))
     time.sleep(poll_interval*1.0/1000.0)
-
+    return math.degrees(fusionPose[2])
 
 
 
@@ -243,13 +243,29 @@ if __name__=='__main__':
     moon_walk = Action(tree2.superparsexml("11 B_L_S", offsets=[darwin]))
     lback = MotionSet(tree2.parsexml("18 B_L_E"), offsets=[darwin])
     rback = MotionSet(tree2.parsexml("17 B_R_E"), offsets=[darwin])
+    l_step = MotionSet(tree2.parsexml("10 ff_l_r"), speed=1.5, offsets=[darwin])
+    r_step = MotionSet(tree2.parsexml("9 ff_r_l"), speed=1.5, offsets=[darwin])
+
     state = dxl.getPos()
     print state
     raw_input("Proceed?")
-    #balance.execute()
+    balance.execute()
     raw_input("Sure?")
     #balance.execute()
-    imu_read(imu)
+    init = imu_read(imu)
+    for i in range(12):
+	l_step.execute(speed=1.5)
+	r_step.execute(speed=1.5)
+	k=imu_read(imu)
+	print k
+	if init-k < -5:
+		l_step.setSpeed(1)
+		r_step.setSpeed(1.5)
+	elif init-k > 5:
+		r_step.setSpeed(1)
+		l_step.setSpeed(1.5)
+
+		
     
 
 
