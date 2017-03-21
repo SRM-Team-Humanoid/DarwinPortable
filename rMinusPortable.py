@@ -217,7 +217,7 @@ def imu_read():
 		if imu.IMURead():
 			data = imu.getIMUData()
 			fusionPose = map(str,data["fusionPose"])
-			time.sleep(poll_interval*5.0/1000.0)
+			time.sleep(poll_interval*15.0/1000.0)
 			angle =  math.degrees(float(fusionPose[2]))
 			os.system("echo "+" ".join(fusionPose)+" >> imudata")
 
@@ -236,7 +236,7 @@ if __name__=='__main__':
     tree = XmlTree('data2.xml')
     tree2 = XmlTree('DRIBLE.xml')
     walk = Action(tree.superparsexml("22 F_S_L",offsets=[darwin]))
-    balance = MotionSet(tree.parsexml("152 Balance"), offsets=[darwin,hand])
+    balance = MotionSet(tree.parsexml("152 Balance"), offsets=[darwin])
     moon_walk = Action(tree2.superparsexml("11 B_L_S", offsets=[darwin]))
     lback = MotionSet(tree2.parsexml("18 B_L_E"), offsets=[darwin])
     rback = MotionSet(tree2.parsexml("17 B_R_E"), offsets=[darwin])
@@ -253,20 +253,24 @@ if __name__=='__main__':
     raw_input("Sure?")
     #balance.execute()
     init = angle
-    for i in range(12):
-	l_step.execute(speed=2)
-	r_step.execute(speed=2)
+    for i in range(18):
+	l_step.execute()
+	r_step.execute()
 	#os.system("echo "+str(k)+" >> imudata")
 	k = angle
 	print k
-	if init-k < -5:
+	if init-k < -7:
 		print "Left Turn"
-		r_step.setSpeed(3)
-		l_step.setSpeed(1)
-	elif init-k > 5:
+		r_step.setSpeed(4)
+		l_step.setSpeed(6)
+	elif init-k > 7:
 		print "Right Turn"
-		l_step.setSpeed(3)
-		r_step.setSpeed(1)
+		l_step.setSpeed(4)
+		r_step.setSpeed(6)
+	else:
+                l_step.setSpeed(6)
+                r_step.setSpeed(6)
+
     # #state = dxl.getPos()
     #
     # balance = MotionSet(tree.parsexml("152 Balance"),offsets=offsets)
