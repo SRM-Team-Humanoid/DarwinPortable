@@ -11,7 +11,7 @@ from pprint import pprint
 import xml.etree.cElementTree as ET
 from collections import Counter
 from copy import deepcopy
-
+from threading import Thread
 class Dxl(object):
     def __init__(self,port_id=0, scan_limit=25, lock=-1):
         # Initializes Dynamixel Object
@@ -133,7 +133,6 @@ class Motion(object):
             #print writ
 
 
-
 class MotionSet(object):
     def __init__(self,motions,speed=1.0,exclude =[],offsets=[]):
         self.motions = motions
@@ -210,19 +209,17 @@ imu.setCompassEnable(True)
 poll_interval = imu.IMUGetPollInterval()
 print("Recommended Poll Interval: %dmS\n" % poll_interval)
 
+angle = 0
 
-
-def imu_read(imu):
-  if imu.IMURead():
-    # x, y, z = imu.getFusionData()
-    # print("%f %f %f" % (x,y,z))
-    data = imu.getIMUData()
-    fusionPose = data["fusionPose"]
-   # print("r: %f p: %f y: %f" % (math.degrees(fusionPose[0]), math.degrees(fusionPose[1]), math.degrees(fusionPose[2])))
-    time.sleep(poll_interval*1.0/1000.0)
-    return math.degrees(fusionPose[2])
-
-
+def imu_read():
+	global angle
+	while True:
+		if imu.IMURead():
+			data = imu.getIMUData()
+			fusionPose = map(str,data["fusionPose"])
+			time.sleep(poll_interval*5.0/1000.0)
+			angle =  math.degrees(float(fusionPose[2]))
+			os.system("echo "+" ".join(fusionPose)+" >> imudata")
 
 
 #=========================================================================="
@@ -245,30 +242,31 @@ if __name__=='__main__':
     rback = MotionSet(tree2.parsexml("17 B_R_E"), offsets=[darwin])
     l_step = MotionSet(tree2.parsexml("10 ff_l_r"), speed=1.5, offsets=[darwin])
     r_step = MotionSet(tree2.parsexml("9 ff_r_l"), speed=1.5, offsets=[darwin])
-
+    r_turn = MotionSet(tree2.parsexml("27 RT"),speed=1.2,offsets=[darwin])
+    l_turn = MotionSet(tree2.parsexml("28 LT"),speed=1.2,offsets=[darwin])
+    imu_thread = Thread(target=imu_read)
+    imu_thread.start()
     state = dxl.getPos()
     print state
     raw_input("Proceed?")
     balance.execute()
     raw_input("Sure?")
     #balance.execute()
-    init = imu_read(imu)
+    init = angle
     for i in range(12):
-	l_step.execute(speed=1.5)
-	r_step.execute(speed=1.5)
-	k=imu_read(imu)
+	l_step.execute(speed=2)
+	r_step.execute(speed=2)
+	#os.system("echo "+str(k)+" >> imudata")
+	k = angle
 	print k
 	if init-k < -5:
-		l_step.setSpeed(1)
-		r_step.setSpeed(1.5)
-	elif init-k > 5:
+		print "Left Turn"
 		r_step.setSpeed(1)
-		l_step.setSpeed(1.5)
-
-		
-    
-
-
+		l_step.setSpeed(3)
+	elif init-k > 5:
+		print "Right Turn"
+		l_step.setSpeed(1)
+		r_step.setSpeed(3)
     # #state = dxl.getPos()
     #
     # balance = MotionSet(tree.parsexml("152 Balance"),offsets=offsets)
