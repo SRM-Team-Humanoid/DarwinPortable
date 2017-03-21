@@ -261,12 +261,12 @@ if __name__=='__main__':
 	print k
 	if init-k < -5:
 		print "Left Turn"
-		r_step.setSpeed(1)
-		l_step.setSpeed(3)
+		r_step.setSpeed(3)
+		l_step.setSpeed(1)
 	elif init-k > 5:
 		print "Right Turn"
-		l_step.setSpeed(1)
-		r_step.setSpeed(3)
+		l_step.setSpeed(3)
+		r_step.setSpeed(1)
     # #state = dxl.getPos()
     #
     # balance = MotionSet(tree.parsexml("152 Balance"),offsets=offsets)
