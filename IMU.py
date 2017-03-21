@@ -4,7 +4,10 @@ sys.path.append('.')
 import RTIMU
 import os.path
 import time
+from threading import Thread
 import math
+
+angle = 0
 
 def imu_init():
 	SETTINGS_FILE = "RTIMULib"
@@ -36,6 +39,7 @@ def imu_init():
 
 
 def imu_read(imu):
+  global angle
   if imu.IMURead():
     # x, y, z = imu.getFusionData()
     # print("%f %f %f" % (x,y,z))
@@ -44,4 +48,8 @@ def imu_read(imu):
     print("r: %f p: %f y: %f" % (math.degrees(fusionPose[0]), 
         math.degrees(fusionPose[1]), math.degrees(fusionPose[2])))
     time.sleep(poll_interval*1.0/1000.0)
+    angle = math.degrees(fusionPose[2])))
 
+
+t = Thread(target=imu_read)
+t.start()
